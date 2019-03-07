@@ -1,0 +1,276 @@
+{% extends 'navbar.html' %}
+{% block head %}
+{{super()}}
+<link href="{{url_for('static',filename='css/bootstrap-editable.css')}}" rel="stylesheet">
+<link href="{{url_for('static',filename='css/bootstrap-table.min.css')}}" rel="stylesheet">
+{% endblock %}
+{% block wrappercontent%}
+<div class="row">
+ <div class="form-inline">
+        <div class="form-group">
+            <label for="queryNameText">责任人：</label>
+            <input id="queryNameText" class="form-control input-sm">
+        </div>
+        <div class="form-group">
+            <label for="queryDescText">描述：</label>
+            <input id="queryDescText" class="form-control input-sm">
+        </div>
+        <button class="btn btn-primary btn-sm" id="queryBtn">查询</button>
+        <button class="btn btn-primary btn-sm" id="resetBtn">重置</button>
+        <button class="btn btn-primary btn-sm" id="addBtn">新增</button>
+    </div>
+    <br/>
+    <table id="dimTable"></table>
+    <!-- 新增模态窗 -->
+        <div class="modal fade" id="addModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">×</button>
+                        <h4 class="modal-title">新增</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-inline">
+                            <div class="form-group">
+                                <label for="addNameText">表名称：</label>
+                                <input id="addNameText" class="form-control input-sm">
+                            </div>
+                            <div class="form-group">
+                                <label for="addKeypersonText">责任人：</label>
+                                <input id="addKeypersonText" class="form-control input-sm">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="addDescText">描述：</label>
+                            <input id="addDescText" class="form-control input-sm">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" data-dismiss="modal">关闭</button>
+                        <button class="btn btn-primary" id="saveAdd">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 修改模态窗 -->
+        <div class="modal fade" id="modifyModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">×</button>
+                        <h4 class="modal-title">修改</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-inline">
+                            <div class="form-group">
+                                <label for="modifyNameText">表名称：</label>
+                                <input id="modifyNameText" class="form-control input-sm">
+                            </div>
+                            <div class="form-group">
+                                <label for="modifyKeypersonText">责任人：</label>
+                                <input id="modifyKeypersonText" class="form-control input-sm">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="modifyDescText">描述：</label>
+                            <input id="modifyDescText" class="form-control input-sm">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" data-dismiss="modal">关闭</button>
+                        <button class="btn btn-primary" id="saveModify">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js%}
+<script src="{{url_for('static',filename='js/tableExport.min.js')}}"></script>
+<script src="{{url_for('static',filename='js/bootstrap-table.min.js')}}"></script>
+<script src="{{url_for('static',filename='js/bootstrap-table-export.min.js')}}"></script>
+<script src="{{url_for('static',filename='js/bootstrap-table-zh-CN.js')}}"></script>
+<script src="{{url_for('static',filename='js/bootbox.min.js')}}"></script>
+<script>
+        var $dimTable = $('#dimTable');
+        $dimTable.bootstrapTable({
+        url: 'dims/getData',
+        queryParams: function (params) {
+            return {
+                offset: params.offset,
+                limit: params.limit,
+                name: $('#queryNameText').val(),
+                desc: $('#queryDescText').val()
+            }
+        },
+        columns: [
+        {
+            field: 'id',
+            title: 'ID'
+        },
+            {
+            field: 'name',
+            title: '表名称'
+        }, {
+            field: 'key_person',
+            title: '责任人'
+        }, {
+            field: 'description',
+            title: '描述'
+        }, {
+            formatter: function (value, row, index) {
+                return [
+                    '<a href="javascript:modifyDim(' + row.id + ",'" + row.name + "','" + row.key_person + "','" + row.description + "'" + ')">' +
+                        '<button class="btn btn-primary btn-sm" id="modBtn">修改</button>' +
+                    '</a>',
+                    '   <a href="javascript:delDim(' + row.id + ')">' +
+                        '<button class="btn btn-primary btn-sm" id="delBtn">删除</button>' +
+                    '</a>',
+                    '   <a href="javascript:delDim(' + row.name + ')">' +
+                        '<button class="btn btn-primary btn-sm" id="cheBtn">查看</button>' +
+                    '</a>'
+                ].join('');
+            },
+            title: '操作'
+        }],
+        striped: true,
+        pagination: true,
+        sidePagination: 'server',
+        pageSize: 10,
+        pageList: [5, 10, 25, 50, 100],
+    });
+
+    bootbox.setLocale('zh_CN');
+
+    var titleTip = '提示';
+
+    // 验证姓名和地址是否为空
+    function verifyNameAndKeyperson(name, keyperson) {
+        if (name != '' && keyperson != '') {
+            return true;
+        }
+        return false;
+    }
+
+    function nullAlert() {
+        bootbox.alert({
+            title: titleTip,
+            message: '所有项均为必填！'
+        });
+    }
+
+    // 点击查询按钮，年龄符合查询条件方可跳转查询
+    $('#queryBtn').click(function () {
+        var age = $('#queryNameText').val();
+        // 刷新并跳转到第一页
+        $dimTable.bootstrapTable('selectPage', 1);
+    });
+
+    // 点击重置按钮，清空查询条件并跳转回第一页
+    $('#resetBtn').click(function() {
+        $('.form-group :text').val('');
+        $dimTable.bootstrapTable('selectPage', 1);
+    });
+
+    // 用于修改服务器资源
+    function exchangeData(path, id,name, key_person, desc) {
+        $.ajax({
+            url: path,
+            type: 'post',
+            data : {
+                id:id,
+                name: name,
+                key_person: key_person,
+                desc: desc
+            },
+            success: function(res) {
+                bootbox.alert({
+                    title: titleTip,
+                    message: res.message
+                });
+                // 在每次提交操作后返回首页
+                $dimTable.bootstrapTable('selectPage', 1);
+            }
+        });
+    }
+
+    // 新增
+    $('#addBtn').click(function() {
+        $('#addNameText').val('');
+        $('#addKeypersonText').val('');
+        $('#addDescText').val('');
+        $('#addModal').modal('show');
+    });
+
+    $('#saveAdd').click(function() {
+        $('#addModal').modal('hide');
+        bootbox.confirm({
+            title: titleTip,
+            message: '确认增加？',
+            callback: function (flag) {
+                if (flag) {
+                    var name = $('#addNameText').val();
+                    var keyperson = $('#addKeypersonText').val();
+                    var desc = $('#addDescText').val();
+                    if (verifyNameAndKeyperson(name, keyperson)) {
+                        exchangeData('dims/add','',name,keyperson,desc);
+                    } else {
+                        nullAlert();
+                    }
+                }
+            }
+        });
+    });
+
+    var mid;
+    // 修改
+    function modifyDim(id,name,keyperson,desc) {
+        mid = id;
+        $('#modifyNameText').val(name);
+        $('#modifyKeypersonText').val(keyperson);
+        $('#modifyDescText').val(desc);
+        $('#modifyModal').modal('show');
+    }
+
+    $('#saveModify').click(function() {
+        $('#modifyModal').modal('hide');
+        bootbox.confirm({
+            title: titleTip,
+            message: '确认修改？',
+            callback: function (flag) {
+                if (flag) {
+                    var name = $('#modifyNameText').val();
+                    var keyperson = $('#modifyKeypersonText').val();
+                    var desc = $('#modifyDescText').val();
+                    if (verifyNameAndKeyperson(name, keyperson)) {
+                        exchangeData('dims/edit', mid, name, keyperson, desc);
+                    } else {
+                        nullAlert();
+                    }
+                }
+            }
+        });
+    });
+
+    // 删除
+    function delDim(id) {
+        bootbox.confirm({
+            title: titleTip,
+            message: '确认删除？',
+            callback: function(flag) {
+                if (flag) {
+                    exchangeData("dims/delete", id);
+                }
+            }
+        });
+
+    }
+    //查看
+    function cheDim(name) {
+        exchangeData("dims/check", name);
+    }
+</script>
+{% endblock %}

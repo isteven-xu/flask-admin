@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html >
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% block head %}
+    <title>{% block title%}{% endblock %}数据工作台</title>
+    <link rel="shortcut icon" href="{{url_for('static',filename='img/favicon.svg')}}">
+    <link href="{{url_for('static',filename='css/bootstrap.min.css')}}?v=3.3.6" rel="stylesheet">
+    <link href="{{url_for('static',filename='css/font-awesome.css')}}?v=4.4.0" rel="stylesheet">
+
+    <link href="{{url_for('static',filename='css/animate.css')}}" rel="stylesheet">
+    <link href="{{url_for('static',filename='css/style.css')}}?v=4.1.0" rel="stylesheet">
+    <!--[if lt IE 9]>
+    <meta http-equiv="refresh" content="0;ie.html" />
+    <![endif]-->
+    <script>if(window.top !== window.self){ window.top.location = window.location;}</script>
+    {% endblock %}
+</head>
+
+<body class="gray-bg top-navigation">
+{% for message in get_flashed_messages(with_categories=True) %}
+        <div class="alert alert-{{ message[0] }}" role="alert">
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+            {{ message[1] }}
+        </div>
+{% endfor %}
+{% block content %}
+{% endblock %}
+
+        <div class="footer">
+            <div class="pull-right">
+                <strong>Copyright 2020</strong>
+            </div>
+        </div>
+
+<script type="text/javascript" src="{{url_for('static',filename='js/jquery.min.js')}}?v=2.1.4"></script>
+<script type="text/javascript" src="{{url_for('static',filename='js/bootstrap.min.js')}}?v=3.3.6"></script>
+{% block js %}{% endblock %}
+</body>
+</html>
